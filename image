@@ -1,0 +1,81 @@
+# This Python 3 environment comes with many helpful analytics libraries installed
+# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python
+# For example, here's several helpful packages to load
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+
+# Input data files are available in the read-only "../input/" directory
+# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using "Save & Run All" 
+# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from skimage.util import random_noise
+from skimage import io
+
+flower_images="/kaggle/input/flower-color-images/flower_images/flower_images"
+
+image_files=os.listdir(flower_images)
+num_images_to_process=10
+
+image_data_box = []
+for image_file in image_files[:num_images_to_process]:
+    image_path = os.path.join(flower_images, image_file)
+    image = io.imread(image_path, as_gray=True)  # Convert to grayscale
+    image_data_box.append(image.flatten())
+
+image_data_box = np.array(image_data_box)
+
+#print(image_data_box)
+#print(100*"r")
+noisy_image_data = random_noise(image_data_box, mode='gaussian', var=0.1)
+
+#print(noisy_image_data)
+
+
+
+
+num_components_to_retain = min(20, image_data_box.shape[0]) 
+pca = PCA(n_components=num_components_to_retain)
+pca.fit(image_data_box)
+
+
+projected_data = pca.transform(noisy_image_data)
+
+denoised_data = pca.inverse_transform(projected_data)
+
+
+denoised_images = denoised_data.reshape(-1, image.shape[0], image.shape[1])
+
+
+plt.figure(figsize=(12, 9))
+
+
+for i in range(num_images_to_process):
+    plt.subplot(3, num_images_to_process, i + 1)
+    plt.imshow(image_data_box[i].reshape(image.shape), cmap='gray')
+    plt.axis('off')
+    plt.title('Original')
+
+    plt.subplot(3, num_images_to_process, i + 1 + num_images_to_process)
+    plt.imshow(noisy_image_data[i].reshape(image.shape), cmap='gray')
+    plt.axis('off')
+    plt.title('Noisy')
+
+    plt.subplot(3, num_images_to_process, i + 1 + 2 * num_images_to_process)
+    plt.imshow(denoised_images[i], cmap='gray')
+    plt.axis('off')
+    plt.title('Denoised')
+
+plt.tight_layout()
+plt.show()
